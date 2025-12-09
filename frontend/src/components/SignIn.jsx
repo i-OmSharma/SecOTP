@@ -3,7 +3,8 @@ import { useState } from "react";
 
 export const SignIn = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [phonNumber, setPhoneNumber] = useState();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignIn = (e) => {
@@ -29,12 +30,22 @@ export const SignIn = () => {
         <p className="text-gray-500 mb-8">Enter your details</p>
 
         <form onSubmit={handleSignIn}>
-          <label className="block text-gray-700 font-medium mb-1">Username</label>
+          <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
           <input
             type="text"
-            placeholder="Enter your username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your phone number"
+            value={phonNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            required
+            className="w-full px-4 py-2 mb-6 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          <label className="block text-gray-700 font-medium mb-1">Email</label>
+          <input
+            type="text"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
             className="w-full px-4 py-2 mb-6 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
