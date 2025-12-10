@@ -1,22 +1,29 @@
 import express from 'express'
 import { 
         loginUser, 
+        registerUser,
         myProfile, 
         getAllUsers, 
         getAUser, 
-        updateName
+        updateName,
+        getBalance
         } from '../controller/user.js';
 import { verifyUser } from '../controller/verifyUser.js'
+import { initiateTransaction, verifyTransactionOTP } from '../controller/transaction.js';
 import { isAuth } from '../middleware/isAuth.js';
 
 
 const router = express.Router();
 
 router.post("/login", loginUser)
+router.post("/register", registerUser)
 router.post("/verify", verifyUser)
 router.get("/me", isAuth, myProfile)
 router.get("/user/all", isAuth, getAllUsers)
-router.get("/user/:id",  getAUser)
+router.get("/user/:id", isAuth, getAUser)
 router.post("/update/user", isAuth, updateName)
+router.get("/balance", isAuth, getBalance);
+router.post("/transaction/initiate", isAuth, initiateTransaction);
+router.post("/transaction/verify", isAuth, verifyTransactionOTP);
 
 export default router;

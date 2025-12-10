@@ -4,7 +4,16 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const startSendCosumer = async()=> {
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASSWORD
+    }
+});
+
+export const startSendConsumer = async()=> {
     try {
         const connection = await amqp.connect({
             protocol: 'amqp',
@@ -27,14 +36,6 @@ export const startSendCosumer = async()=> {
             if(message) {
                 try {
                     const {to, subject, body} = JSON.parse(message.content.toString());
-                    const transporter = nodemailer.createTransport({
-                        host: 'smtp.gmail.com',
-                        port: 465,
-                        auth: {
-                            user: process.env.MAIL_USER,
-                            pass: process.env.MAIL_PASSWORD
-                        }
-                    });
 
                     await transporter.sendMail({
                         from:"Chat App",
@@ -47,6 +48,7 @@ export const startSendCosumer = async()=> {
                     channel.ack(message);
                 } catch (error) {
                     console.log("Failed to send OTP", error);
+                    channel.nack(message, false, false);
                 }
             }
         })

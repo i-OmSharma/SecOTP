@@ -3,42 +3,45 @@ import { User } from "../model/User.js";
 import { generateToken } from "./generateToken.js";
 import TryCatch from "../config/TryCatch.js";
 
+export const verifyUser = TryCatch(async (req, res) => {
+  const { email, otp: enteredOTP } = req.body;
 
-export const verifyUser = TryCatch(async(req, res) => {
-    const {email, otp:enteredOTP }= req.body
+  if (!email || !enteredOTP) {
+    res.status(400).json({
+      message: "Email and OTP required ",
+    });
+    return;
+  }
 
-    if (!email || !enteredOTP) {
-        res.status(400).json({
-            message: "Email and OTP required "
-        })
-        return;
-    }
+  const otpKey = `otp:${email}`;
+  const storedOTP = await redisClient.get(otpKey);
 
-    const otpKey = `otp:${email}`
-    const storedOTP = await redisClient.get(otpKey)
+  if (!storedOTP || storedOTP !== enteredOTP) {
+    res.status(400).json({
+      message: "Invalid OTP or expired OTP",
+    });
+    return;
+  }
 
-    if (!storedOTP || storedOTP !== enteredOTP) {
-        res.status(400).json({
-            message: "Invalid OTP or extired OTP"
-        })
-        return;
-    }
+  await redisClient.del(otpKey);
 
-    await redisClient.del(otpKey)
+  let user = await User.findOne({ email });
 
-    let user = await User.findOne({email})
+  if (!user) {
+    // User does not exist, prompt for full registration
+    res.status(404).json({
+      message: "User not found. Please complete your registration.",
+      registrationRequired: true,
+      email: email,
+    });
+    return;
+  }
 
-    if (!user) {
-        const name = email.slice(0,8)
+  const token = generateToken(user);
 
-        user = await User.create({name, email})
-    }
-
-    const token = generateToken(user);
-
-    res.json({
-        messagae: "User Verified",
-        user,
-        token
-    })
+  res.json({
+    message: "User Verified",
+    user,
+    token,
+  });
 });

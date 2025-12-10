@@ -6,87 +6,144 @@ import { generateToken } from "./generateToken.js";
 import { AuthenticatedRequest } from "../middleware/isAuth.js";
 import { Response } from "express";
 
-
 // Login User
-export const loginUser = TryCatch(async(req, res) => {
-    const {email} = req.body
+export const loginUser = TryCatch(async (req, res) => {
+  const { email } = req.body;
 
-    const rateLimitKey =`otp:ratelimit:${email}`
-    const rateLimit = await redisClient.get(rateLimitKey)    //rate Limit
-    if (rateLimit) {
-        res.status(429).json({
-            message:"Too manu request. Please wait"
-        })
-        return;
-    }
-    const otp = Math.floor(100000 + Math.random() * 900000).toString() //Generating otp
+  const rateLimitKey = `otp:ratelimit:${email}`;
+  const rateLimit = await redisClient.get(rateLimitKey); //rate Limit
+  if (rateLimit) {
+    res.status(429).json({
+      message: "Too many requests. Please wait",
+    });
+    return;
+  }
+  const otp = Math.floor(100000 + Math.random() * 900000).toString(); //Generating otp
 
-    const otpKey = `otp:${email}`  // storing otp to redis 
-    await redisClient.set(otpKey, otp, {
-        EX: 300,
-    })
+  const otpKey = `otp:${email}`; // storing otp to redis
+  await redisClient.set(otpKey, otp, {
+    EX: 300,
+  });
 
-    await redisClient.set(rateLimitKey,"true", { //rate limit 1 min for re send
-        EX: 60
-    })
+  await redisClient.set(rateLimitKey, "true", {
+    //rate limit 1 min for re send
+    EX: 60,
+  });
 
-    const message = { //send otp
-        to: email,
-        subject: "Your OTP is",
-        body: `Your OTP is ${otp}, valid for 5 minutes`
-    }
-    
-    await publishToQueue("send-otp", message)
+  const message = {
+    //send otp
+    to: email,
+    subject: "Your OTP is",
+    body: `Your OTP is ${otp}, valid for 5 minutes`,
+  };
 
-    res.status(200).json({
-        message: "OTP send to your mail"
-    })
-})
+  await publishToQueue("send-otp", message);
 
+  res.status(200).json({
+    message: "OTP send to your mail",
+  });
+});
+
+// Register User
+export const registerUser = TryCatch(async (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password) {
+    res.status(400).json({
+      message: "name, email, and password are required",
+    });
+    return;
+  }
+
+  let user = await User.findOne({ email });
+  if (user) {
+    res.status(400).json({
+      message: "User with this email already exists",
+    });
+    return;
+  }
+
+  // Generate a unique account number
+  const accountNumber = `ACC${Date.now()}${Math.floor(
+    100 + Math.random() * 900
+  )}`;
+
+  user = await User.create({ name, email, password, accountNumber });
+
+  res.status(201).json({
+    message: "User registered successfully",
+    user,
+  });
+});
 
 // VerifyUser --> Donef
 
-export const myProfile = TryCatch(async (req:AuthenticatedRequest, res:Response) => {
+export const myProfile = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
     const user = req.user;
 
-    res.json(user)
+    res.json(user);
+  }
+);
+// check balance
+export const getBalance = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
 
-}) 
-
-export const updateName = TryCatch(async (req:AuthenticatedRequest, res:Response) => {
-    const user = await User.findById(req.user?._id)    
-
-    if(!user){
-        res.status(404).json({
-            message: "User not found"
-        })
-        return;
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
     }
 
-    user.name = req.body.name
-    await user.save()
+    res.json({
+      balance: user.balance,
+    });
+  }
+);
 
-    const token = generateToken(user)
+export const updateName = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const user = await User.findById(req.user?._id);
+
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
+    }
+
+    user.name = req.body.name;
+    await user.save();
+
+    const token = generateToken(user);
 
     res.json({
-        messgae: "User updated",
-        user,
-        token
-    })
-
-})
+      message: "User updated",
+      user,
+      token,
+    });
+  }
+);
 
 // Get All User
-export const getAllUsers = TryCatch(async (req:AuthenticatedRequest, res:Response) => {
-    const users = await User.find()
+// This should be an admin-only route in a real application.
+// For now, we'll leave it as is but acknowledge the security risk.
+export const getAllUsers = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const users = await User.find();
 
-    res.json(users)
-})
+    res.json(users);
+  }
+);
 
 // Get a User
 
-export const getAUser = TryCatch(async (req:AuthenticatedRequest, res:Response) => {
-    const users = await User.findById(req.params.id)
+export const getAUser = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const users = await User.findById(req.params.id).select("-password");
 
-    res.json(users)
-})
+    res.json(users);
+  }
+);
