@@ -8,7 +8,41 @@ import { Response } from "express";
 
 // Login User
 export const loginUser = TryCatch(async (req, res) => {
-  const { email } = req.body;
+  const { email, accountNumber, password } = req.body;
+
+  if (!email || !accountNumber || !password) {
+    res.status(400).json({
+      message: "Email, account number, and password are required",
+    });
+    return;
+  }
+
+  // Find user by email
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    res.status(401).json({
+      message: "Invalid credentials",
+    });
+    return;
+  }
+
+  // Verify account number
+  if (user.accountNumber !== accountNumber) {
+    res.status(401).json({
+      message: "Invalid credentials",
+    });
+    return;
+  }
+
+  // Verify password
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) {
+    res.status(401).json({
+      message: "Invalid credentials",
+    });
+    return;
+  }
 
   const rateLimitKey = `otp:ratelimit:${email}`;
   const rateLimit = await redisClient.get(rateLimitKey); //rate Limit
