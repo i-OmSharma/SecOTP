@@ -14,7 +14,7 @@ const connectDb = async () => {
     try {
 
         await mongoose.connect(url, {
-            dbName: "ChatDB"
+            dbName: "secOTP"
         });
         console.log("DB Connected");
 

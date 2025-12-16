@@ -6,6 +6,7 @@ import { SignUp } from "./components/SignUp";
 import { Home } from "./components/Home";
 import { MyBanks } from "./components/MyBanks";
 import { OTPVerification } from "./components/OTPVerification";
+import { TransactionOTPVerification } from "./components/TransactionOTPVerification";
 import { TransactionHistory } from "./components/TransactionHistory";
 import { TransferFunds } from "./components/TransferFunds";
 
@@ -14,7 +15,7 @@ function Layout() {
   const location = useLocation();
 
   // Routes where sidebar should be hidden
-  const noSidebarRoutes = ["/", "/signup", "/verify-otp"];
+  const noSidebarRoutes = ["/", "/signup", "/verify-otp", "/transaction-otp"];
   const hideSidebar = noSidebarRoutes.includes(location.pathname);
 
   // Routes that need scroll (only applied if sidebar is shown)
@@ -38,6 +39,7 @@ function Layout() {
           <Route path="/home" element={<Home />} />
           <Route path="/mybanks" element={<MyBanks />} />
           <Route path="/verify-otp" element={<OTPVerification />} />
+          <Route path="/transaction-otp" element={<TransactionOTPVerification />} />
           <Route path="/transactions" element={<TransactionHistory />} />
           <Route path="/transfer" element={<TransferFunds />} />
         </Routes>
