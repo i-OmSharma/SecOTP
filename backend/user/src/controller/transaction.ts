@@ -246,3 +246,21 @@ export const verifyTransactionOTP = TryCatch(
     }
   }
 );
+
+// GET TRANSACTION HISTORY (READ API)
+
+export const getTransactionHistory = TryCatch(
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user._id;
+
+    const transactions = await Transaction.find({
+      $or: [{ sender: userId }, { recipient: userId }],
+    })
+      .sort({ createdAt: -1 })     // latest first
+      .limit(10)                   // last 10 transactions
+      .populate("sender", "email accountNumber")
+      .populate("recipient", "email accountNumber");
+
+    res.status(200).json(transactions);
+  }
+);

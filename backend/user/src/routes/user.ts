@@ -9,7 +9,7 @@ import {
         getBalance
         } from '../controller/user.js';
 import { verifyUser } from '../controller/verifyUser.js'
-import { initiateTransaction, verifyTransactionOTP } from '../controller/transaction.js';
+import { initiateTransaction, verifyTransactionOTP, getTransactionHistory } from '../controller/transaction.js';
 import { isAuth } from '../middleware/isAuth.js';
 
 
@@ -25,5 +25,6 @@ router.post("/update/user", isAuth, updateName)
 router.get("/balance", isAuth, getBalance);
 router.post("/transaction/initiate", isAuth, initiateTransaction);
 router.post("/transaction/verify", isAuth, verifyTransactionOTP);
+router.get("/transactions", isAuth, getTransactionHistory);
 
 export default router;
