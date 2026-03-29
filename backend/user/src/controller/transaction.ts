@@ -253,14 +253,34 @@ export const getTransactionHistory = TryCatch(
   async (req: AuthenticatedRequest, res: Response) => {
     const userId = req.user._id;
 
+    // Pagination parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination metadata
+    const totalCount = await Transaction.countDocuments({
+      $or: [{ sender: userId }, { recipient: userId }],
+    });
+
     const transactions = await Transaction.find({
       $or: [{ sender: userId }, { recipient: userId }],
     })
       .sort({ createdAt: -1 })     // latest first
-      .limit(10)                   // last 10 transactions
+      .skip(skip)
+      .limit(limit)
       .populate("sender", "email accountNumber")
       .populate("recipient", "email accountNumber");
 
-    res.status(200).json(transactions);
+    res.status(200).json({
+      transactions,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: page < Math.ceil(totalCount / limit),
+      },
+    });
   }
 );

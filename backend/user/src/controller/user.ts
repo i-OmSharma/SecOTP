@@ -10,25 +10,26 @@ import { Response } from "express";
 export const loginUser = TryCatch(async (req, res) => {
   const { email, accountNumber, password } = req.body;
 
-  if (!email || !accountNumber || !password) {
+  if (!password) {
     res.status(400).json({
-      message: "Email, account number, and password are required",
+      message: "Password is required",
     });
     return;
   }
 
-  // Find user by email
-  const user = await User.findOne({ email });
+  if (!email && !accountNumber) {
+    res.status(400).json({
+      message: "Email or account number is required",
+    });
+    return;
+  }
+
+  // Find user by email or account number
+  const user = await User.findOne(
+    email ? { email } : { accountNumber }
+  );
 
   if (!user) {
-    res.status(401).json({
-      message: "Invalid credentials",
-    });
-    return;
-  }
-
-  // Verify account number
-  if (user.accountNumber !== accountNumber) {
     res.status(401).json({
       message: "Invalid credentials",
     });
@@ -44,7 +45,7 @@ export const loginUser = TryCatch(async (req, res) => {
     return;
   }
 
-  const rateLimitKey = `otp:ratelimit:${email}`;
+  const rateLimitKey = `otp:ratelimit:${user.email}`;
   const rateLimit = await redisClient.get(rateLimitKey); //rate Limit
   if (rateLimit) {
     res.status(429).json({
@@ -54,7 +55,7 @@ export const loginUser = TryCatch(async (req, res) => {
   }
   const otp = Math.floor(100000 + Math.random() * 900000).toString(); //Generating otp
 
-  const otpKey = `otp:${email}`; // storing otp to redis
+  const otpKey = `otp:${user.email}`; // storing otp to redis
   await redisClient.set(otpKey, otp, {
     EX: 300,
   });
@@ -66,12 +67,19 @@ export const loginUser = TryCatch(async (req, res) => {
 
   const message = {
     //send otp
-    to: email,
+    to: user.email,
     subject: "Your OTP is",
     body: `Your OTP is ${otp}, valid for 5 minutes`,
   };
 
-  await publishToQueue("send-otp", message);
+  const otpSent = await publishToQueue("send-otp", message);
+
+  if (!otpSent) {
+    res.status(500).json({
+      message: "Failed to send OTP. Please try again later.",
+    });
+    return;
+  }
 
   res.status(200).json({
     message: "OTP send to your mail",
@@ -80,7 +88,7 @@ export const loginUser = TryCatch(async (req, res) => {
 
 // Register User
 export const registerUser = TryCatch(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phoneNumber } = req.body;
 
   if (!name || !email || !password) {
     res.status(400).json({
@@ -102,11 +110,17 @@ export const registerUser = TryCatch(async (req, res) => {
     100 + Math.random() * 900
   )}`;
 
-  user = await User.create({ name, email, password, accountNumber });
+  user = await User.create({ name, email, password, accountNumber, phoneNumber });
 
   res.status(201).json({
     message: "User registered successfully",
-    user,
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      accountNumber: user.accountNumber,
+      balance: user.balance,
+    },
   });
 });
 
@@ -155,18 +169,24 @@ export const updateName = TryCatch(
 
     res.json({
       message: "User updated",
-      user,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        accountNumber: user.accountNumber,
+        balance: user.balance,
+        phoneNumber: user.phoneNumber,
+        isAdmin: user.isAdmin,
+      },
       token,
     });
   }
 );
 
-// Get All User
-// This should be an admin-only route in a real application.
-// For now, we'll leave it as is but acknowledge the security risk.
+// Get All Users (Admin Only)
 export const getAllUsers = TryCatch(
   async (req: AuthenticatedRequest, res: Response) => {
-    const users = await User.find();
+    const users = await User.find().select("-password");
 
     res.json(users);
   }

@@ -28,4 +28,12 @@ const transactionSchema = new mongoose.Schema(
   { timestamps: true } // Adds createdAt and updatedAt fields
 );
 
+// Add indexes for better query performance
+transactionSchema.index({ sender: 1 });
+transactionSchema.index({ recipient: 1 });
+transactionSchema.index({ createdAt: -1 });
+transactionSchema.index({ transactionId: 1 });
+transactionSchema.index({ sender: 1, createdAt: -1 });
+transactionSchema.index({ recipient: 1, createdAt: -1 });
+
 export const Transaction = mongoose.model("Transaction", transactionSchema);

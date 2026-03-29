@@ -19,7 +19,7 @@ const connectDb = async () => {
         console.log("DB Connected");
 
     } catch (error) {
-        console.error("Failed to connmect to DB", error);
+        console.error("Failed to connect to DB", error);
         process.exit(1);
     }
 }

@@ -7,5 +7,5 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
 export const generateToken = (user: IUser) => {
-  return jwt.sign({ user }, JWT_SECRET, { expiresIn: "15d" });
+  return jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: "15d" });
 };

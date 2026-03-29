@@ -25,7 +25,7 @@ export const verifyUser = TryCatch(async (req, res) => {
 
   await redisClient.del(otpKey);
 
-  let user = await User.findOne({ email });
+  let user = await User.findOne({ email }).select("-password");
 
   if (!user) {
     // User does not exist, prompt for full registration

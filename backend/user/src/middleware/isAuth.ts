@@ -1,4 +1,5 @@
 import type { IUser } from "../model/User.js";
+import { User } from "../model/User.js";
 import { Request, Response, NextFunction } from "express";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -26,18 +27,43 @@ export const isAuth = async (
     const decodedValue = jwt.verify(
       token,
       process.env.JWT_SECRET as string
-    ) as JwtPayload & { user?: IUser };
+    ) as JwtPayload & { userId?: string };
 
-    if (!decodedValue || !decodedValue.user) {
+    if (!decodedValue || !decodedValue.userId) {
       res.status(401).json({ message: "Unauthorized! invalid token" });
       return;
     }
 
-    req.user = decodedValue.user as IUser;
+    const user = await User.findById(decodedValue.userId).select("-password");
+
+    if (!user) {
+      res.status(401).json({ message: "User not found" });
+      return;
+    }
+
+    req.user = user as IUser;
     next();
   } catch {
     res.status(401).json({ message: "Please login - JWT error" });
   }
+};
+
+export const isAdmin = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ message: "Unauthorized! Please login" });
+    return;
+  }
+
+  if (!req.user.isAdmin) {
+    res.status(403).json({ message: "Access denied. Admin only." });
+    return;
+  }
+
+  next();
 };
 
 // 👇 THIS IS THE KEY PART

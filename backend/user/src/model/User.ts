@@ -9,6 +9,7 @@ export interface IUser extends Document {
   accountNumber: string;
   password: string;
   balance: number;
+  isAdmin: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -42,6 +43,10 @@ const UserSchema = new Schema<IUser>(
     balance: {
       type: Number,
       default: 10000,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   {

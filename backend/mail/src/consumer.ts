@@ -39,8 +39,8 @@ export const startSendConsumer = async()=> {
                     const {to, subject, body} = JSON.parse(message.content.toString());
 
                     await transporter.sendMail({
-                        from:"Chat App",
-                        to, 
+                        from: `"secOTP" <${process.env.MAIL_USER}>`,
+                        to,
                         subject,
                         text: body
                     })
