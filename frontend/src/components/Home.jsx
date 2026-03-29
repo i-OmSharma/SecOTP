@@ -33,7 +33,7 @@ export function Home() {
 
       //  Transactions
       const tx = await transactionAPI.getHistory();
-      setTransactions(tx);
+      setTransactions(tx.transactions || []);
     } catch (err) {
       // Any auth / API error → logout
       authHelpers.logout();

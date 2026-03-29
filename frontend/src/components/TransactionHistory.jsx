@@ -34,7 +34,7 @@ export function TransactionHistory() {
 
       // 3️⃣ Transactions
       const tx = await transactionAPI.getHistory();
-      setTransactions(tx);
+      setTransactions(tx.transactions || []);
     } catch (err) {
       authHelpers.logout();
       navigate("/");
